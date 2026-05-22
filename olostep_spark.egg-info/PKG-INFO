@@ -120,3 +120,27 @@ See [notebooks/spark_enrichment_demo.ipynb](notebooks/spark_enrichment_demo.ipyn
 ## License
 
 MIT — © 2025 Olostep
+
+## Testing
+
+### Unit Tests (No API Key Required)
+
+```bash
+pytest tests/test_spark.py
+```
+
+Tests validate UDF registration, error handling, and edge cases using mocked responses.
+
+### Integration Tests (Requires API Key)
+
+1. Set your Olostep API key:
+```bash
+export OLOSTEP_API_KEY="your-api-key"
+```
+
+2. Run integration tests:
+```bash
+pytest tests/test_integration.py -m integration -v
+```
+
+Integration tests exercise the UDFs against the real Olostep API to validate end-to-end functionality.
