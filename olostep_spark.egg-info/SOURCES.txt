@@ -1,0 +1,11 @@
+LICENSE
+README.md
+pyproject.toml
+olostep_spark/__init__.py
+olostep_spark/spark.py
+olostep_spark.egg-info/PKG-INFO
+olostep_spark.egg-info/SOURCES.txt
+olostep_spark.egg-info/dependency_links.txt
+olostep_spark.egg-info/requires.txt
+olostep_spark.egg-info/top_level.txt
+tests/test_spark.py
