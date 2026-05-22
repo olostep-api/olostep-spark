@@ -52,3 +52,8 @@ Documentation = "https://docs.olostep.com/data-integrations/spark"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["olostep_spark*"]
+[tool.pytest.ini_options]
+markers = [
+    "integration: marks tests as integration tests requiring real API keys",
+]
+asyncio_mode = "strict"

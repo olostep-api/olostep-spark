@@ -34,14 +34,17 @@ Usage:
     \"\"\")
 """
 
-from __future__ import annotations
-
 import asyncio
 import json
 import logging
 import os
 import re
 from typing import Optional
+
+import requests
+from olostep import AsyncOlostep
+from pyspark.sql.functions import pandas_udf
+from pyspark.sql.types import StringType
 
 logger = logging.getLogger(__name__)
 
@@ -118,17 +121,18 @@ def register_olostep_udfs(
 
     @pandas_udf(StringType())
     def _enrich(
-        input_data_series: pd.Series,
-        output_columns_series: pd.Series,
-    ) -> pd.Series:
-        from olostep import OlostepClient
+        input_data_series,
+        output_columns_series,
+    ):
+        import pandas as pd
+        from olostep import AsyncOlostep
         from olostep.errors import Olostep_BaseError, OlostepServerError_AuthFailed
 
         async def _enrich_one(
             client,
-            input_data: dict,
-            output_columns: list,
-        ) -> str:
+            input_data,
+            output_columns,
+        ):
             """Enrich a single row using Olostep answers API."""
             try:
                 # Build a structured task from input context + desired outputs
@@ -184,10 +188,14 @@ def register_olostep_udfs(
                 logger.warning("Unexpected error: %s", exc)
                 return json.dumps({"error": str(exc)})
 
-        async def _enrich_all(rows: list[tuple]) -> list[str]:
-            async with OlostepClient(api_key=resolved_key) as client:
+        async def _enrich_all(rows):
+            async with AsyncOlostep(api_key=resolved_key) as client:
                 tasks = [
-                    _enrich_one(client, row[0] or {}, row[1] or [])
+                    _enrich_one(
+                        client,
+                        row[0] if isinstance(row[0], dict) and row[0] else {},
+                        list(row[1]) if hasattr(row[1], '__iter__') and len(row[1]) > 0 else []
+                    )
                     for row in rows
                 ]
                 results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -210,14 +218,12 @@ def register_olostep_udfs(
     # ------------------------------------------------------------------ #
 
     @pandas_udf(StringType())
-    def _search(queries: pd.Series) -> pd.Series:
-        import requests as _req
-
+    def _search(queries):
         def _search_one(query: str) -> str:
             if not query or not query.strip():
                 return json.dumps([])
             try:
-                resp = _req.post(
+                resp = requests.post(
                     "https://api.olostep.com/v1/searches",
                     headers={
                         "Authorization": f"Bearer {resolved_key}",
